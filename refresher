@@ -1,0 +1,96 @@
+javascript:(function() {
+    let intervalId = null;
+    let lastResult = null;
+    let isRunning = false; 
+    
+    function requestNotificationPermission() {
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("通知权限已授予。");
+                } else {
+                    console.warn("未授予通知权限，将只使用弹窗提醒。");
+                }
+            });
+        }
+    }
+    
+    requestNotificationPermission();
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.innerText = "启动定时搜索";
+    toggleBtn.style.position = "fixed";
+    toggleBtn.style.top = "20px";
+    toggleBtn.style.right = "20px";
+    toggleBtn.style.zIndex = 9999;
+    toggleBtn.style.padding = "10px 15px";
+    toggleBtn.style.background = "#4CAF50";
+    toggleBtn.style.color = "#fff";
+    toggleBtn.style.border = "none";
+    toggleBtn.style.borderRadius = "5px";
+    toggleBtn.style.cursor = "pointer";
+    document.body.appendChild(toggleBtn);
+
+    // 开关逻辑
+    toggleBtn.addEventListener("click", () => {
+        if (!isRunning) {
+            startAutoSearch();
+        } else {
+            stopAutoSearch();
+        }
+    });
+
+    function startAutoSearch() {
+        isRunning = true;
+        toggleBtn.innerText = "停止定时搜索";
+        toggleBtn.style.background = "#f44336";
+        doSearch();
+        intervalId = setInterval(doSearch, 5 * 1000); 
+    }
+
+    function stopAutoSearch() {
+        isRunning = false;
+        toggleBtn.innerText = "启动定时搜索";
+        toggleBtn.style.background = "#4CAF50";
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
+    }
+
+    function doSearch() {
+        const searchBtn = document.querySelector("button.aui-button.aui-button-primary.search-button");
+        const resultBox = document.querySelector("#main div div:nth-child(2) div div div div:nth-child(1) div:nth-child(1) div issuetable-web-component");
+        
+        if (!searchBtn || !resultBox) {
+            console.warn("未找到按钮或结果区域，请检查选择器");
+            stopAutoSearch();
+            return;
+        }
+
+        console.log("正在执行搜索和检查...");
+        searchBtn.click();
+
+        setTimeout(() => {
+            const currentResult = resultBox.innerText.trim();
+            if (lastResult !== null && currentResult !== lastResult) {
+                console.log("检测到变化！");
+                notifyChange();
+                stopAutoSearch(); 
+            }
+            lastResult = currentResult;
+        }, 2000);
+    }
+
+    function notifyChange() {
+        alert("搜索结果有变化！");
+        window.focus();
+        if ("Notification" in window && Notification.permission === "granted") {
+            new Notification("搜索提醒", {
+                body: "搜索结果有变化！",
+                icon: "https://cdn-icons-png.flaticon.com/512/1827/1827343.png"
+            });
+        }
+        // lastResult = null; 
+    }
+})();
